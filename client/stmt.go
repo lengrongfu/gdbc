@@ -48,10 +48,10 @@ func (st GdbcStmt) Exec(args []driver.Value) (driver.Result, error) {
 		glog.Errorf("send COM_STMT_EXECUTE command error:%+v", err)
 		return nil, err
 	}
-	if err := st.c.Payload.ReadPayload(st.c.netConn); err != nil {
-		glog.Errorf("read COM_STMT_EXECUTE result error:%+v", err)
-		return nil, err
-	}
+	//if err := st.c.Payload.ReadPayload(st.c.netConn); err != nil {
+	//	glog.Errorf("read COM_STMT_EXECUTE result error:%+v", err)
+	//	return nil, err
+	//}
 	//a OK_Packet
 	//a ERR_Packet
 	//or a resultset: Binary Protocol Resultset

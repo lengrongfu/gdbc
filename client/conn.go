@@ -192,7 +192,7 @@ func (c *Conn) Close() error {
 
 //Begin Tx start
 func (c *Conn) Begin() (driver.Tx, error) {
-	if err := c.WriteCommandStr(constant.ComQuery, "BEGIN"); err != nil {
+	if err := c.WriteCommandStr(constant.ComQuery, "START TRANSACTION"); err != nil {
 		glog.Error(err)
 		return nil, err
 	}
