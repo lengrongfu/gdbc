@@ -93,6 +93,26 @@ func main() {
 		fmt.Printf(create_time.String())
 		fmt.Printf(update_time.String())
 	}
+	//8.使用事务，使用事务时，各种操作都要用tx对象来使用，才能实现事务，默认调用事务回滚，这样可以释放连接,也可以手动释放连接
+	//使用前如果事务自动提交是开启的需要先进行关闭。SET AUTOCOMMIT = 0
+	tx, err := db.Begin()
+	if err != nil {
+		//fmt.Println(err)
+		panic(err)
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec("update student set name=? where id = ?", "test", 16138)
+	if err != nil {
+		tx.Rollback()
+	}
+	_, err = tx.Exec("delete from student where id=?", 16138)
+	//
+	commit := tx.Commit()
+	if commit != nil {
+		tx.Rollback()
+	}
+	//或者不捕获错误，使用上面的自动回滚方法
+	tx.Commit()
 }
 ```
 
@@ -100,3 +120,4 @@ func main() {
 - 完全和mysql的协议对应，从结构上和流程上看代码都会更加清楚。
 - 和上层`database/sql/driver`契合很好
 - 功能单一，只作为一个`driver`使用
+- 

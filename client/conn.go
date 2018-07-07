@@ -19,8 +19,11 @@ type Conn struct {
 	netConn        net.Conn
 	Payload        *packets.PayloadPackets
 	cnf            config
+	serverVersion  string
 	connectionID   uint32
 	authData       []byte
+	characterSet   uint8
+	statusFlags    uint16
 	authPluginName []byte
 }
 
@@ -138,7 +141,7 @@ func (c *Conn) WritePacket(data []byte) error {
 	}
 }
 
-// WriteCommand send Text command
+// WriteCommand send Binary command
 func (c *Conn) WriteCommand(command []byte) error {
 	c.Payload.RestSequenceID()
 	comd := []byte{0, 0, 0, 0}
@@ -150,7 +153,7 @@ func (c *Conn) WriteCommand(command []byte) error {
 	return nil
 }
 
-//WriteCommandStr send string command
+//WriteCommandStr send Text command
 func (c *Conn) WriteCommandStr(command byte, arg string) error {
 	c.Payload.RestSequenceID()
 	//string<EOF> 编码，最后一个字符串为0x00 ？
@@ -192,12 +195,36 @@ func (c *Conn) Close() error {
 
 //Begin Tx start
 func (c *Conn) Begin() (driver.Tx, error) {
+	//如果自动提交启用，就先关闭
+	//if c.statusFlags&constant.ServerStatusAutocommit > 0 {
+	//	if err := c.WriteCommandStr(constant.ComQuery, "SET AUTOCOMMIT = 0"); err != nil {
+	//		glog.Errorf("SET AUTOCOMMIT = 0 error:%s", err.Error())
+	//		return nil, err
+	//	}
+	//	if err := c.Payload.ReadPayload(c.netConn); err != nil {
+	//		glog.Errorf("Reader AUTOCOMMIT = 0 Result error:%s", err.Error())
+	//		return nil, err
+	//	}
+	//}
 	if err := c.WriteCommandStr(constant.ComQuery, "START TRANSACTION"); err != nil {
 		glog.Error(err)
 		return nil, err
 	}
-	tx := GdbcTx{c}
-	return tx, nil
+	if readErr := c.Payload.ReadPayload(c.netConn); readErr != nil {
+		glog.Errorf("START TRANSACTION,Reader result error:%+v", readErr)
+		return nil, readErr
+	}
+	paylod := c.Payload.Payload
+	capability := c.Payload.Capability
+	if errPack := packets.ErrPacketHandler(paylod, capability); errPack.IsErr() {
+		glog.Errorf("WHEN START TRANSACTION ,MYSQL SERVER RETURN ERROR:%s", errPack.String())
+		return nil, errors.New(errPack.String())
+	}
+	if okPacket := packets.OkPacketHandler(paylod, capability); okPacket.IsOk() {
+		tx := GdbcTx{c}
+		return tx, nil
+	}
+	return nil, errors.New("Start Transaction unknown mistake")
 }
 
 //Ping method is check this conn is Available

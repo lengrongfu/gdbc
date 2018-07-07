@@ -116,8 +116,8 @@ const (
 
 //packets Status Flags
 const (
-	ServerStatusInTrans            uint16 = 0x0001
-	ServerStatusAutocommit         uint16 = 0x0002
+	ServerStatusInTrans            uint16 = 0x0001 //a transaction is active
+	ServerStatusAutocommit         uint16 = 0x0002 //auto-commit is enabled
 	ServerMoreResultsExists        uint16 = 0x0008
 	ServerStatusNoGoodIndexUsed    uint16 = 0x0010
 	ServerStatusNoIndexUsed        uint16 = 0x0020
@@ -174,7 +174,6 @@ const (
 	MysqlTypeGeometry   byte = 0xff
 )
 
-
 //字段 flag
 const (
 	NotNullFlag       uint16 = 0x0001
@@ -191,9 +190,8 @@ const (
 	SetFlag           uint16 = 0x0800
 )
 
-
 //protocol type
 const (
-	TextProtocol  = iota
+	TextProtocol = iota
 	BinaryProtocol
 )
